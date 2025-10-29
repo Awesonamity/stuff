@@ -2,122 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>YouTube Channel Comparison</title>
+  <title>YouTube Sub Race & Comparison</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 2em auto; }
-    input, button, select { font-size: 1em; margin: 0.2em; }
-    .channel-info, .video-info { border: 1px solid #ccc; padding: 1em; margin-top: 1em; border-radius: 8px; display: flex; align-items: center; }
-    .channel-info img, .video-info img { border-radius: 50%; margin-right: 1em; }
-    .comparison { display: flex; gap: 2em; }
-    .note { color: #a33; margin-top: 2em; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>YouTube Channel Subscriber Comparison</h2>
-  <div class="comparison">
-    <div>
-      <input id="channelA" placeholder="Channel URL or Username" size="25">
-      <button onclick="fetchChannel('A')">Fetch</button>
-      <div id="infoA"></div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="compare">Compare</button>
+    <button class="tab-btn" data-tab="video">Video Info</button>
+    <button class="tab-btn" data-tab="race">Sub Race</button>
+  </div>
+  <div class="tab-content" id="compare">
+    <h2>Compare Subscribers</h2>
+    <div class="compare-channels">
+      <input placeholder="Channel URL or Username" id="compareA">
+      <input placeholder="Channel URL or Username" id="compareB">
+      <button onclick="compareSubs()">Compare</button>
     </div>
-    <div>
-      <input id="channelB" placeholder="Channel URL or Username" size="25">
-      <button onclick="fetchChannel('B')">Fetch</button>
-      <div id="infoB"></div>
+    <div id="compareResult"></div>
+  </div>
+  <div class="tab-content" id="video" style="display:none">
+    <h2>Video Info</h2>
+    <input id="videoUrl" placeholder="YouTube Video URL" style="width:70%">
+    <button onclick="fetchVideo()">Fetch</button>
+    <div id="videoInfo"></div>
+  </div>
+  <div class="tab-content" id="race" style="display:none">
+    <h2>YouTube Sub Race</h2>
+    <div id="raceSetup">
+      <button onclick="createRace()">Create New Race</button>
+    </div>
+    <div id="raceArea" style="display:none">
+      <div id="raceLink"></div>
+      <div id="raceChannels"></div>
+      <input id="raceChannelInput" placeholder="Add Channel URL or Username">
+      <button onclick="addRaceChannel()">Add Channel</button>
+      <div id="raceResults"></div>
     </div>
   </div>
-  <hr>
-  <h2>YouTube Video Info</h2>
-  <input id="videoUrl" style="width:70%" placeholder="Paste YouTube video URL">
-  <button onclick="fetchVideo()">Fetch Video Info</button>
-  <div id="videoInfo"></div>
   <div class="note">
-    Note: Downloading videos is not available on GitHub Pages.<br>
-    <small>Want to download? See <a href="https://y2mate.com" target="_blank" rel="noopener">y2mate.com</a> or similar third-party sites.</small>
+    <p>Downloading videos is not available on GitHub Pages.<br>
+    For downloading, see <a href="https://y2mate.com" target="_blank">y2mate.com</a> or similar.</p>
   </div>
-  <script>
-    const API_KEY = "AIzaSyBjLRXyDPkszZ15yW0Pzrck3x3GFxC3z5k";
-
-    function channelIdFromUrl(input) {
-      try {
-        let url = new URL(input);
-        let parts = url.pathname.split("/").filter(Boolean);
-        if (parts[0] === "channel") return parts[1];
-        if (parts[0] === "user") return parts[1];
-        if (parts[0] === "c") return parts[1];
-      } catch {}
-      return input;
-    }
-
-    async function fetchChannel(which) {
-      const input = document.getElementById("channel" + which).value.trim();
-      const idOrName = channelIdFromUrl(input);
-      let url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${idOrName}&key=${API_KEY}`;
-      let resp = await fetch(url);
-      let data = await resp.json();
-      let item = data.items && data.items[0];
-      if (!item) {
-        // Try as username
-        url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forUsername=${idOrName}&key=${API_KEY}`;
-        resp = await fetch(url);
-        data = await resp.json();
-        item = data.items && data.items[0];
-      }
-      const infoDiv = document.getElementById("info" + which);
-      if (!item) {
-        infoDiv.innerHTML = "<span style='color:red'>Channel not found</span>";
-        return;
-      }
-      infoDiv.innerHTML = `
-        <div class="channel-info">
-          <img src="${item.snippet.thumbnails.default.url}" alt="" width="60" height="60">
-          <div>
-            <b>${item.snippet.title}</b><br>
-            Subscribers: ${
-              item.statistics.hiddenSubscriberCount
-                ? "Hidden"
-                : Number(item.statistics.subscriberCount).toLocaleString()
-            }
-          </div>
-        </div>
-      `;
-    }
-
-    function videoIdFromUrl(url) {
-      try {
-        let u = new URL(url);
-        if (u.hostname === "youtu.be") return u.pathname.slice(1);
-        return new URLSearchParams(u.search).get("v");
-      } catch { return null; }
-    }
-
-    async function fetchVideo() {
-      const input = document.getElementById("videoUrl").value.trim();
-      const videoId = videoIdFromUrl(input);
-      const infoDiv = document.getElementById("videoInfo");
-      if (!videoId) {
-        infoDiv.innerHTML = "<span style='color:red'>Not a valid YouTube video URL</span>";
-        return;
-      }
-      const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${API_KEY}`;
-      const resp = await fetch(url);
-      const data = await resp.json();
-      const item = data.items && data.items[0];
-      if (!item) {
-        infoDiv.innerHTML = "<span style='color:red'>Video not found</span>";
-        return;
-      }
-      infoDiv.innerHTML = `
-        <div class="video-info">
-          <img src="${item.snippet.thumbnails.default.url}" alt="" width="80" height="80">
-          <div>
-            <b>${item.snippet.title}</b><br>
-            Views: ${Number(item.statistics.viewCount).toLocaleString()}
-          </div>
-        </div>
-      `;
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
