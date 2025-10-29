@@ -1,4 +1,4 @@
-// === Tabs ===
+// === Tabs // === Tabs ===
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
